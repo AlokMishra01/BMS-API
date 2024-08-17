@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.35122.118
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BMS-API", "BMS-API.csproj", "{5F7ACFE9-85A5-49E3-B020-A0D497EA54DA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5F7ACFE9-85A5-49E3-B020-A0D497EA54DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F7ACFE9-85A5-49E3-B020-A0D497EA54DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F7ACFE9-85A5-49E3-B020-A0D497EA54DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F7ACFE9-85A5-49E3-B020-A0D497EA54DA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C3F5B571-E26E-48E8-B621-D40F69EA40A3}
+	EndGlobalSection
+EndGlobal
