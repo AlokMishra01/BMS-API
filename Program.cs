@@ -28,7 +28,7 @@ namespace BMS_API
             );
 
             // Identity
-            builder.Services.AddIdentity<SystemUser, IdentityRole>(
+            builder.Services.AddIdentity<User, IdentityRole>(
                 options =>
                 {
                     options.User.RequireUniqueEmail = true;

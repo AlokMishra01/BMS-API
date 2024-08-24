@@ -1,5 +1,4 @@
-﻿using BMS_API.Controllers.V1;
-using BMS_API.Services;
+﻿using BMS_API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace BMS_API.Middlewares
@@ -17,7 +16,6 @@ namespace BMS_API.Middlewares
 
         public override async Task TokenValidated(TokenValidatedContext context)
         {
-            var accountController = _serviceProvider.GetRequiredService<AccountController>();
             var token = context.SecurityToken.ToString();
 
             if (_tokenService.IsTokenBlacklisted(token))

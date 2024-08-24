@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace BMS_API.Controllers.V1
 {
@@ -16,21 +17,24 @@ namespace BMS_API.Controllers.V1
     [ApiController]
     public class AccountController : ControllerBase
     {
-        private readonly UserManager<SystemUser> _userManager;
-        private readonly SignInManager<SystemUser> _signInManager;
+        private readonly ILogger<AccountController> _logger;
+        private readonly UserManager<User> _userManager;
+        private readonly SignInManager<User> _signInManager;
         private readonly ApplicationDbContext _context;
         private readonly IEmailSender _emailSender;
         private readonly OtpService _otpService;
         private readonly TokenService _tokenService;
 
         public AccountController(
-            UserManager<SystemUser> userManager,
-            SignInManager<SystemUser> signInManager,
+            ILogger<AccountController> logger,
+            UserManager<User> userManager,
+            SignInManager<User> signInManager,
             ApplicationDbContext context,
             IEmailSender emailSender,
             OtpService otpService,
             TokenService tokenService)
         {
+            _logger = logger;
             _userManager = userManager;
             _signInManager = signInManager;
             _context = context;
@@ -61,7 +65,7 @@ namespace BMS_API.Controllers.V1
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var user = new SystemUser { UserName = model.UserName, Email = model.Email };
+            var user = new User { UserName = model.UserName, Email = model.Email };
             var result = await _userManager.CreateAsync(user, model.Password);
 
             if (result.Succeeded)
@@ -100,7 +104,6 @@ namespace BMS_API.Controllers.V1
         }
 
         [HttpPost("refresh-token")]
-        [Authorize]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDTO request)
         {
             if (string.IsNullOrEmpty(request?.Token))
@@ -132,10 +135,19 @@ namespace BMS_API.Controllers.V1
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var user = await _userManager.GetUserAsync(User);
-
-            if (user == null)
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userIdClaim == null)
+            {
+                _logger.LogError("User ID claim not found in token.");
                 return Unauthorized("User not found.");
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                _logger.LogError($"User with ID '{userIdClaim}' not found in the database.");
+                return Unauthorized("User not found.");
+            }
 
             var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
 
