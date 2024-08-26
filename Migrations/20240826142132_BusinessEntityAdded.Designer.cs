@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BMS_API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240817074749_UserDatabaseCreated")]
-    partial class UserDatabaseCreated
+    [Migration("20240826142132_BusinessEntityAdded")]
+    partial class BusinessEntityAdded
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -73,27 +73,23 @@ namespace BMS_API.Migrations
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid>("UserProfileId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserProfileId");
 
                     b.ToTable("AuditLogs");
                 });
 
-            modelBuilder.Entity("BMS_API.Data.Entities.Department", b =>
+            modelBuilder.Entity("BMS_API.Data.Entities.Business", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DepartmentName")
+                    b.Property<string>("Address")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -101,37 +97,21 @@ namespace BMS_API.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Departments");
-                });
-
-            modelBuilder.Entity("BMS_API.Data.Entities.Permission", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
+                    b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("PermissionName")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Permissions");
+                    b.ToTable("Businesses");
                 });
 
             modelBuilder.Entity("BMS_API.Data.Entities.RefreshToken", b =>
@@ -162,55 +142,6 @@ namespace BMS_API.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
-            modelBuilder.Entity("BMS_API.Data.Entities.Role", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("RoleName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Roles");
-                });
-
-            modelBuilder.Entity("BMS_API.Data.Entities.RolePermission", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("AssignedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("PermissionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PermissionId");
-
-                    b.HasIndex("RoleId");
-
-                    b.ToTable("RolePermissions");
-                });
-
             modelBuilder.Entity("BMS_API.Data.Entities.User", b =>
                 {
                     b.Property<string>("Id")
@@ -223,12 +154,6 @@ namespace BMS_API.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("DateOfBirth")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
@@ -236,22 +161,11 @@ namespace BMS_API.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("boolean");
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("MiddleName")
-                        .HasColumnType("text");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -276,9 +190,6 @@ namespace BMS_API.Migrations
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("boolean");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
@@ -295,17 +206,18 @@ namespace BMS_API.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("BMS_API.Data.Entities.UserDepartment", b =>
+            modelBuilder.Entity("BMS_API.Data.Entities.UserBusinessRole", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("AssignedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("DepartmentId")
+                    b.Property<Guid>("BusinessId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -313,11 +225,11 @@ namespace BMS_API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DepartmentId");
+                    b.HasIndex("BusinessId");
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserDepartments");
+                    b.ToTable("UserBusinessRoles");
                 });
 
             modelBuilder.Entity("BMS_API.Data.Entities.UserProfile", b =>
@@ -332,6 +244,20 @@ namespace BMS_API.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("DateOfBirth")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("MiddleName")
+                        .HasColumnType("text");
 
                     b.Property<Guid>("PermanentAddressId")
                         .HasColumnType("uuid");
@@ -360,31 +286,6 @@ namespace BMS_API.Migrations
                         .IsUnique();
 
                     b.ToTable("UserProfiles");
-                });
-
-            modelBuilder.Entity("BMS_API.Data.Entities.UserRole", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("AssignedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RoleId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserRoles");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -521,49 +422,30 @@ namespace BMS_API.Migrations
 
             modelBuilder.Entity("BMS_API.Data.Entities.AuditLog", b =>
                 {
-                    b.HasOne("BMS_API.Data.Entities.User", "User")
+                    b.HasOne("BMS_API.Data.Entities.UserProfile", "UserProfile")
                         .WithMany("AuditLogs")
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("UserProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("User");
+                    b.Navigation("UserProfile");
                 });
 
-            modelBuilder.Entity("BMS_API.Data.Entities.RolePermission", b =>
+            modelBuilder.Entity("BMS_API.Data.Entities.UserBusinessRole", b =>
                 {
-                    b.HasOne("BMS_API.Data.Entities.Permission", "Permission")
-                        .WithMany("RolePermissions")
-                        .HasForeignKey("PermissionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BMS_API.Data.Entities.Role", "Role")
-                        .WithMany("RolePermissions")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Permission");
-
-                    b.Navigation("Role");
-                });
-
-            modelBuilder.Entity("BMS_API.Data.Entities.UserDepartment", b =>
-                {
-                    b.HasOne("BMS_API.Data.Entities.Department", "Department")
-                        .WithMany("UserDepartments")
-                        .HasForeignKey("DepartmentId")
+                    b.HasOne("BMS_API.Data.Entities.Business", "Business")
+                        .WithMany("UserBusinessRoles")
+                        .HasForeignKey("BusinessId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("BMS_API.Data.Entities.User", "User")
-                        .WithMany("UserDepartments")
+                        .WithMany("UserBusinessRoles")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Department");
+                    b.Navigation("Business");
 
                     b.Navigation("User");
                 });
@@ -591,25 +473,6 @@ namespace BMS_API.Migrations
                     b.Navigation("PermanentAddress");
 
                     b.Navigation("TemporaryAddress");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("BMS_API.Data.Entities.UserRole", b =>
-                {
-                    b.HasOne("BMS_API.Data.Entities.Role", "Role")
-                        .WithMany("UserRoles")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BMS_API.Data.Entities.User", "User")
-                        .WithMany("UserRoles")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Role");
 
                     b.Navigation("User");
                 });
@@ -665,33 +528,22 @@ namespace BMS_API.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("BMS_API.Data.Entities.Department", b =>
+            modelBuilder.Entity("BMS_API.Data.Entities.Business", b =>
                 {
-                    b.Navigation("UserDepartments");
-                });
-
-            modelBuilder.Entity("BMS_API.Data.Entities.Permission", b =>
-                {
-                    b.Navigation("RolePermissions");
-                });
-
-            modelBuilder.Entity("BMS_API.Data.Entities.Role", b =>
-                {
-                    b.Navigation("RolePermissions");
-
-                    b.Navigation("UserRoles");
+                    b.Navigation("UserBusinessRoles");
                 });
 
             modelBuilder.Entity("BMS_API.Data.Entities.User", b =>
                 {
-                    b.Navigation("AuditLogs");
-
-                    b.Navigation("UserDepartments");
+                    b.Navigation("UserBusinessRoles");
 
                     b.Navigation("UserProfile")
                         .IsRequired();
+                });
 
-                    b.Navigation("UserRoles");
+            modelBuilder.Entity("BMS_API.Data.Entities.UserProfile", b =>
+                {
+                    b.Navigation("AuditLogs");
                 });
 #pragma warning restore 612, 618
         }

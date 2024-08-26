@@ -50,6 +50,7 @@ namespace BMS_API
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             }).AddJwtBearer(options =>
             {
+                options.SaveToken = true;
                 options.EventsType = typeof(CustomJwtBearerEvents);
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
@@ -61,6 +62,10 @@ namespace BMS_API
                     ValidAudience = builder.Configuration["Jwt:Audience"],
                     IssuerSigningKey = new SymmetricSecurityKey(key)
                 };
+            });
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("SuperOwnerOrOwnerPolicy", policy => policy.Requirements.Add(new BusinessRoleRequirement()));
             });
 
             // Email
@@ -107,6 +112,8 @@ namespace BMS_API
             }
 
             app.UseHttpsRedirection();
+
+            app.UseMiddleware<CustomExceptionHandlerMiddleware>();
 
             app.UseAuthentication();
 

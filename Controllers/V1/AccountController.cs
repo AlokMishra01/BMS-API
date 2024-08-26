@@ -1,5 +1,6 @@
 ﻿using Asp.Versioning;
 using BMS_API.Data.Entities;
+using BMS_API.Models;
 using BMS_API.Models.DTOs;
 using BMS_API.Services;
 using IdentityManager.Data;
@@ -8,7 +9,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
+using System.Text.RegularExpressions;
 
 namespace BMS_API.Controllers.V1
 {
@@ -46,16 +47,26 @@ namespace BMS_API.Controllers.V1
         [HttpGet("check-username")]
         public async Task<IActionResult> CheckUsernameAvailability(string username)
         {
-            if (string.IsNullOrWhiteSpace(username))
-                return BadRequest("Username is required.");
+            var match = Regex.Match(username, "^[^\\s]{3}$", RegexOptions.IgnoreCase);
+            if (!match.Success)
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Invalid request data.",
+                    Errors = new List<string> { string.IsNullOrWhiteSpace(username) ? "Username is required." : "Username must be between 3 and 50 characters with no spaces." }
+                });
+            }
+
 
             var user = await _userManager.FindByNameAsync(username);
             var isAvailable = user == null;
 
-            return Ok(new
+            return Ok(new ApiResponse<bool>
             {
-                isAvailable,
-                message = isAvailable ? "Username is available." : "Username is already taken."
+                Success = true,
+                Message = isAvailable ? "Username is available." : "Username is already taken.",
+                Data = isAvailable
             });
         }
 
@@ -63,29 +74,62 @@ namespace BMS_API.Controllers.V1
         public async Task<IActionResult> Register([FromBody] RegisterRequestDTO model)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Invalid request data.",
+                    Errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)).ToList()
+                });
+            }
 
             var user = new User { UserName = model.UserName, Email = model.Email };
             var result = await _userManager.CreateAsync(user, model.Password);
 
-            if (result.Succeeded)
-                return Ok(new { result = "User created successfully!" });
 
-            return BadRequest(result.Errors);
+            if (result.Succeeded)
+            {
+                return Ok(new ApiResponse<bool>
+                {
+                    Success = true,
+                    Message = "User created successfully!",
+                    Data = true
+                });
+            }
+
+
+            return BadRequest(new ApiResponse<object>
+            {
+                Success = false,
+                Message = "User was not created!",
+            });
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO model)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Invalid request data.",
+                    Errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)).ToList()
+                });
+            }
 
             var user = model.UsernameOrEmail.Contains("@")
                 ? await _userManager.FindByEmailAsync(model.UsernameOrEmail)
                 : await _userManager.FindByNameAsync(model.UsernameOrEmail);
 
             if (user == null)
-                return Unauthorized(new { message = "Invalid username or email." });
+            {
+                return Unauthorized(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Invalid username or email.",
+                });
+            }
 
             var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
 
@@ -100,19 +144,36 @@ namespace BMS_API.Controllers.V1
                 return Ok(new { token = accessToken, refreshToken = refreshToken.Token });
             }
 
-            return Unauthorized(new { message = "Invalid password." });
+            return Unauthorized(new ApiResponse<object>
+            {
+                Success = false,
+                Message = "Invalid password.",
+            });
         }
 
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDTO request)
         {
             if (string.IsNullOrEmpty(request?.Token))
-                return BadRequest("Invalid refresh token.");
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Invalid request data.",
+                    Errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)).ToList()
+                });
+            }
 
             var storedToken = await _context.RefreshTokens.FirstOrDefaultAsync(rt => rt.Token == request.Token);
 
             if (storedToken == null || storedToken.IsRevoked || storedToken.IsUsed || storedToken.ExpiryDate < DateTime.UtcNow)
-                return Unauthorized("Invalid or expired refresh token.");
+            {
+                return Unauthorized(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Invalid or expired refresh token.",
+                });
+            }
 
             storedToken.IsUsed = true;
             _context.RefreshTokens.Update(storedToken);
@@ -133,26 +194,35 @@ namespace BMS_API.Controllers.V1
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDTO model)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userIdClaim == null)
             {
-                _logger.LogError("User ID claim not found in token.");
-                return Unauthorized("User not found.");
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Invalid request data.",
+                    Errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)).ToList()
+                });
             }
 
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                _logger.LogError($"User with ID '{userIdClaim}' not found in the database.");
-                return Unauthorized("User not found.");
+                return Unauthorized(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "User not found.",
+                });
             }
 
             var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
 
             if (!result.Succeeded)
-                return BadRequest(result.Errors);
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Password was not changed.",
+                });
+            }
 
             return Ok(new { message = "Password changed successfully." });
         }
@@ -161,12 +231,25 @@ namespace BMS_API.Controllers.V1
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDTO model)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Invalid request data.",
+                    Errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)).ToList()
+                });
+            }
 
             var user = await _userManager.FindByEmailAsync(model.Email);
 
             if (user == null)
-                return Ok(new { message = "If the email is registered, a password reset OTP will be sent." });
+            {
+                return Unauthorized(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "User not found.",
+                });
+            }
 
             var otp = _otpService.GenerateOtp(model.Email);
             await _emailSender.SendEmailAsync(model.Email, "Password Reset OTP", $"Your OTP is: {otp}");
@@ -178,21 +261,46 @@ namespace BMS_API.Controllers.V1
         public async Task<IActionResult> ResetPassword([FromBody] ResetOtpRequestDTO model)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Invalid request data.",
+                    Errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)).ToList()
+                });
+            }
 
             if (!_otpService.ValidateOtp(model.Email, model.Otp))
-                return BadRequest("Invalid or expired OTP.");
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Invalid or expired OTP.",
+                });
+            }
 
             var user = await _userManager.FindByEmailAsync(model.Email);
 
             if (user == null)
-                return BadRequest("User not found.");
+            {
+                return Unauthorized(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "User not found.",
+                });
+            }
 
             var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
             var result = await _userManager.ResetPasswordAsync(user, resetToken, model.NewPassword);
 
             if (!result.Succeeded)
-                return BadRequest(result.Errors);
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Password was not reset.",
+                });
+            }
 
             _otpService.RemoveOtp(model.Email);
 
@@ -206,7 +314,13 @@ namespace BMS_API.Controllers.V1
             var authorizationHeader = Request.Headers["Authorization"].ToString();
 
             if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
-                return BadRequest("Authorization header missing or invalid.");
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Authorization header missing or invalid.",
+                });
+            }
 
             var accessToken = authorizationHeader.Substring("Bearer ".Length).Trim();
             _tokenService.BlacklistToken(accessToken);
@@ -214,7 +328,11 @@ namespace BMS_API.Controllers.V1
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return Unauthorized("User not found.");
+                return Unauthorized(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "User not found.",
+                });
             }
 
             var refreshToken = await _context.RefreshTokens
@@ -235,7 +353,13 @@ namespace BMS_API.Controllers.V1
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
-                return Unauthorized("User not found.");
+            {
+                return Unauthorized(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "User not found.",
+                });
+            }
 
             var otp = _otpService.GenerateOtp(user.Email);
             await _emailSender.SendEmailAsync(user.Email, "Delete Account OTP", $"Your OTP is: {otp}");
@@ -248,20 +372,45 @@ namespace BMS_API.Controllers.V1
         public async Task<IActionResult> DeleteAccount([FromBody] VerifyOtpAndDeleteAccountRequestDTO model)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Invalid request data.",
+                    Errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)).ToList()
+                });
+            }
 
             var user = await _userManager.GetUserAsync(User);
 
             if (user == null)
-                return Unauthorized("User not found.");
+            {
+                return Unauthorized(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "User not found.",
+                });
+            }
 
             if (!_otpService.ValidateOtp(user.Email, model.Otp))
-                return BadRequest("Invalid or expired OTP.");
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Invalid or expired OTP.",
+                });
+            }
 
             var result = await _userManager.DeleteAsync(user);
 
             if (!result.Succeeded)
-                return BadRequest(result.Errors);
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Account was not deleted.",
+                });
+            }
 
             _otpService.RemoveOtp(user.Email);
 

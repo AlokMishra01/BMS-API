@@ -3,6 +3,7 @@ using System;
 using IdentityManager.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BMS_API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240825053539_UpdateUserProfileAndAuditLogSchema")]
+    partial class UpdateUserProfileAndAuditLogSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -80,43 +83,6 @@ namespace BMS_API.Migrations
                     b.ToTable("AuditLogs");
                 });
 
-            modelBuilder.Entity("BMS_API.Data.Entities.Business", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Phone")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Businesses");
-                });
-
             modelBuilder.Entity("BMS_API.Data.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -152,9 +118,6 @@ namespace BMS_API.Migrations
 
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("integer");
-
-                    b.Property<Guid?>("ActiveBusinessId")
-                        .HasColumnType("uuid");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -210,32 +173,6 @@ namespace BMS_API.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
-                });
-
-            modelBuilder.Entity("BMS_API.Data.Entities.UserBusinessRole", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("BusinessId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BusinessId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserBusinessRoles");
                 });
 
             modelBuilder.Entity("BMS_API.Data.Entities.UserProfile", b =>
@@ -437,25 +374,6 @@ namespace BMS_API.Migrations
                     b.Navigation("UserProfile");
                 });
 
-            modelBuilder.Entity("BMS_API.Data.Entities.UserBusinessRole", b =>
-                {
-                    b.HasOne("BMS_API.Data.Entities.Business", "Business")
-                        .WithMany("UserBusinessRoles")
-                        .HasForeignKey("BusinessId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BMS_API.Data.Entities.User", "User")
-                        .WithMany("UserBusinessRoles")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Business");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("BMS_API.Data.Entities.UserProfile", b =>
                 {
                     b.HasOne("BMS_API.Data.Entities.Address", "PermanentAddress")
@@ -534,15 +452,8 @@ namespace BMS_API.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("BMS_API.Data.Entities.Business", b =>
-                {
-                    b.Navigation("UserBusinessRoles");
-                });
-
             modelBuilder.Entity("BMS_API.Data.Entities.User", b =>
                 {
-                    b.Navigation("UserBusinessRoles");
-
                     b.Navigation("UserProfile")
                         .IsRequired();
                 });

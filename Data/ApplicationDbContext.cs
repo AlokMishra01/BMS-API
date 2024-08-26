@@ -13,13 +13,9 @@ public class ApplicationDbContext : IdentityDbContext<User>
 
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<User> Users { get; set; }
-    public DbSet<Role> Roles { get; set; }
-    public DbSet<UserRole> UserRoles { get; set; }
-    public DbSet<Department> Departments { get; set; }
-    public DbSet<UserDepartment> UserDepartments { get; set; }
-    public DbSet<Permission> Permissions { get; set; }
-    public DbSet<RolePermission> RolePermissions { get; set; }
     public DbSet<UserProfile> UserProfiles { get; set; }
+    public DbSet<Business> Businesses { get; set; }
+    public DbSet<UserBusinessRole> UserBusinessRoles { get; set; }
     public DbSet<Address> Addresses { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
 
@@ -27,45 +23,16 @@ public class ApplicationDbContext : IdentityDbContext<User>
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<UserRole>()
-            .HasOne(ur => ur.User)
-            .WithMany(u => u.UserRoles)
-            .HasForeignKey(ur => ur.UserId);
-
-        modelBuilder.Entity<UserRole>()
-            .HasOne(ur => ur.Role)
-            .WithMany(r => r.UserRoles)
-            .HasForeignKey(ur => ur.RoleId);
-
-        modelBuilder.Entity<UserDepartment>()
-            .HasOne(ud => ud.User)
-            .WithMany(u => u.UserDepartments)
-            .HasForeignKey(ud => ud.UserId);
-
-        modelBuilder.Entity<UserDepartment>()
-            .HasOne(ud => ud.Department)
-            .WithMany(d => d.UserDepartments)
-            .HasForeignKey(ud => ud.DepartmentId);
-
-        modelBuilder.Entity<RolePermission>()
-            .HasOne(rp => rp.Role)
-            .WithMany(r => r.RolePermissions)
-            .HasForeignKey(rp => rp.RoleId);
-
-        modelBuilder.Entity<RolePermission>()
-            .HasOne(rp => rp.Permission)
-            .WithMany(p => p.RolePermissions)
-            .HasForeignKey(rp => rp.PermissionId);
-
         modelBuilder.Entity<UserProfile>()
             .HasOne(up => up.User)
             .WithOne(u => u.UserProfile)
             .HasForeignKey<UserProfile>(up => up.UserId);
 
-        modelBuilder.Entity<AuditLog>()
-            .HasOne(al => al.User)
-            .WithMany(u => u.AuditLogs)
-            .HasForeignKey(al => al.UserId);
+        modelBuilder.Entity<UserProfile>()
+                .HasMany(up => up.AuditLogs)
+                .WithOne(al => al.UserProfile)
+                .HasForeignKey(al => al.UserProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<UserProfile>()
             .HasOne(up => up.PermanentAddress)
@@ -79,6 +46,28 @@ public class ApplicationDbContext : IdentityDbContext<User>
             .HasForeignKey(up => up.TemporaryAddressId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // UserBusinessRole relationships
+        modelBuilder.Entity<UserBusinessRole>()
+            .HasOne(ub => ub.User)
+            .WithMany(u => u.UserBusinessRoles)
+            .HasForeignKey(ub => ub.UserId);
+
+        modelBuilder.Entity<UserBusinessRole>()
+            .HasOne(ub => ub.Business)
+            .WithMany(b => b.UserBusinessRoles)
+            .HasForeignKey(ub => ub.BusinessId);
+
+        // Store enum as string in the database
+        modelBuilder.Entity<UserBusinessRole>()
+            .Property(ub => ub.Role)
+            .HasConversion<string>();
+
+        // Ensure that each business has at least one owner role
+        // Do it on controller
+        // modelBuilder.Entity<UserBusinessRole>()
+        //     .HasIndex(ub => new { ub.BusinessId, ub.Role })
+        //     .IsUnique()
+        //     .HasFilter($"[{nameof(UserBusinessRole.Role)}] = '{BusinessRole.SuperOwner}'");
 
     }
 }
