@@ -17,9 +17,9 @@ namespace BMS_API.Controllers.V1
     public class BusinessController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        private readonly UserManager<User> _userManager;
+        private readonly UserManager<SystemUser> _userManager;
 
-        public BusinessController(ApplicationDbContext context, UserManager<User> userManager)
+        public BusinessController(ApplicationDbContext context, UserManager<SystemUser> userManager)
         {
             _context = context;
             _userManager = userManager;
@@ -84,16 +84,6 @@ namespace BMS_API.Controllers.V1
                 .Select(ubr => ubr.Role)
                 .FirstOrDefaultAsync();
 
-            if (userRole == null)
-            {
-                return BadRequest(new ApiResponse<BusinessDetailsDto>
-                {
-                    Success = false,
-                    Message = "You do not have permission to view this business.",
-                    Errors = new List<string> { "User is not associated with the business." }
-                });
-            }
-
             // Construct the response object
             var response = new ApiResponse<BusinessDetailsDto>
             {
@@ -119,16 +109,6 @@ namespace BMS_API.Controllers.V1
                 .Select(ubr => ubr.Role)
                 .FirstOrDefaultAsync();
 
-            if (userRole == null)
-            {
-                return BadRequest(new ApiResponse<List<UserRoleDto>>
-                {
-                    Success = false,
-                    Message = "You do not have permission to view users of this business.",
-                    Errors = new List<string> { "User is not associated with the business." }
-                });
-            }
-
             // Fetch all users associated with the business
             var businessUsers = await _context.UserBusinessRoles
                 .Include(ubr => ubr.User)
@@ -136,7 +116,7 @@ namespace BMS_API.Controllers.V1
                 .Select(ubr => new UserRoleDto
                 {
                     UserId = ubr.User.Id,
-                    UserName = ubr.User.UserName,
+                    UserName = ubr.User.UserName ?? String.Empty,
                     Role = ubr.Role
                 })
                 .ToListAsync();
@@ -179,11 +159,19 @@ namespace BMS_API.Controllers.V1
         public async Task<ActionResult<ApiResponse<Business>>> CreateBusiness([FromBody] CreateBusinessDto dto)
         {
             var userId = _userManager.GetUserId(User);
-            var user = await _context.Users.FindAsync(userId);
+            if (userId == null)
+            {
+                return NotFound(new ApiResponse<SystemUser>
+                {
+                    Success = false,
+                    Message = "User not found."
+                });
+            }
 
+            var user = await _context.Users.FindAsync(userId);
             if (user == null)
             {
-                return NotFound(new ApiResponse<User>
+                return NotFound(new ApiResponse<SystemUser>
                 {
                     Success = false,
                     Message = "User not found."
@@ -240,7 +228,7 @@ namespace BMS_API.Controllers.V1
 
             if (user == null)
             {
-                return NotFound(new ApiResponse<User>
+                return NotFound(new ApiResponse<SystemUser>
                 {
                     Success = false,
                     Message = "User not found."
@@ -303,8 +291,16 @@ namespace BMS_API.Controllers.V1
         public async Task<ActionResult<ApiResponse<string>>> AddUserToBusiness(Guid businessId, [FromBody] AddUserToBusinessDto dto)
         {
             var currentUserId = _userManager.GetUserId(User);
-            var currentUser = await _userManager.FindByIdAsync(currentUserId);
+            if (currentUserId == null)
+            {
+                return NotFound(new ApiResponse<string>
+                {
+                    Success = false,
+                    Message = "User not found."
+                });
+            }
 
+            var currentUser = await _userManager.FindByIdAsync(currentUserId);
             if (currentUser == null)
             {
                 return NotFound(new ApiResponse<string>
@@ -318,11 +314,6 @@ namespace BMS_API.Controllers.V1
                 .Where(ub => ub.UserId == currentUserId && ub.BusinessId == businessId)
                 .Select(ub => ub.Role)
                 .FirstOrDefaultAsync();
-
-            if (currentRole == null)
-            {
-                return Forbid();
-            }
 
             // Check if the role can add the new user
             if ((currentRole == BusinessRole.SuperOwner && !Enum.IsDefined(typeof(BusinessRole), dto.Role)) ||
@@ -384,6 +375,15 @@ namespace BMS_API.Controllers.V1
         public async Task<ActionResult<ApiResponse<string>>> RemoveUserFromBusiness(Guid businessId, string userId)
         {
             var currentUserId = _userManager.GetUserId(User);
+            if (currentUserId == null)
+            {
+                return NotFound(new ApiResponse<string>
+                {
+                    Success = false,
+                    Message = "User not found."
+                });
+            }
+
             var currentUser = await _userManager.FindByIdAsync(currentUserId);
 
             if (currentUser == null)
@@ -399,11 +399,6 @@ namespace BMS_API.Controllers.V1
                 .Where(ub => ub.UserId == currentUserId && ub.BusinessId == businessId)
                 .Select(ub => ub.Role)
                 .FirstOrDefaultAsync();
-
-            if (currentRole == null)
-            {
-                return Forbid();
-            }
 
             var roleToRemove = await _context.UserBusinessRoles
                 .FirstOrDefaultAsync(ub => ub.UserId == userId && ub.BusinessId == businessId);

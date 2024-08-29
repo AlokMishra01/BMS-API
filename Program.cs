@@ -3,6 +3,7 @@ using BMS_API.Data.Entities;
 using BMS_API.Extensions;
 using BMS_API.Middlewares;
 using BMS_API.Services;
+using BMS_API.Services.Account;
 using IdentityManager.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -28,7 +29,7 @@ namespace BMS_API
             );
 
             // Identity
-            builder.Services.AddIdentity<User, IdentityRole>(
+            builder.Services.AddIdentity<SystemUser, IdentityRole>(
                 options =>
                 {
                     options.User.RequireUniqueEmail = true;
@@ -38,7 +39,7 @@ namespace BMS_API
                     options.Password.RequireNonAlphanumeric = true;      // Require at least one non-alphanumeric character (e.g., !, @, #).
                     options.Password.RequiredLength = 8;                 // Require a minimum length of 8 characters.
                     options.Password.RequiredUniqueChars = 1;            // Require at least one unique character.
-                    options.SignIn.RequireConfirmedAccount = false;
+                    options.SignIn.RequireConfirmedEmail = true;
                 })
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
@@ -93,6 +94,9 @@ namespace BMS_API
             builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
             builder.Services.AddMemoryCache();
             builder.Services.AddScoped<TokenService>();
+
+            // Register AccountService and its interface
+            builder.Services.AddScoped<IAccountService, AccountService>();
 
             var app = builder.Build();
 

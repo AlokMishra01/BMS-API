@@ -6,7 +6,7 @@ namespace BMS_API.Data.Entities
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public string UserId { get; set; }
-        public User User { get; set; }
+        public SystemUser User { get; set; }
         [Required]
         public string FirstName { get; set; } = string.Empty;
         public string? MiddleName { get; set; }

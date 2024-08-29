@@ -19,7 +19,7 @@ namespace BMS_API.Services
             _cache = cache;
         }
 
-        public string GenerateJwtToken(User user)
+        public string GenerateJwtToken(SystemUser user)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);

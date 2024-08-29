@@ -12,7 +12,7 @@
         public BusinessRole Role { get; set; }
 
         // Navigation properties
-        public User User { get; set; }
+        public SystemUser User { get; set; }
         public Business Business { get; set; }
     }
 }

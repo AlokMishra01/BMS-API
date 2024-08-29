@@ -17,10 +17,10 @@ namespace BMS_API.Controllers.V1
     public class UserProfileController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        private readonly UserManager<User> _userManager;
+        private readonly UserManager<SystemUser> _userManager;
         private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "profile-pictures");
 
-        public UserProfileController(ApplicationDbContext context, UserManager<User> userManager)
+        public UserProfileController(ApplicationDbContext context, UserManager<SystemUser> userManager)
         {
             _context = context;
             _userManager = userManager;

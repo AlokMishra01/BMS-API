@@ -5,14 +5,14 @@ using Microsoft.EntityFrameworkCore;
 namespace IdentityManager.Data;
 
 
-public class ApplicationDbContext : IdentityDbContext<User>
+public class ApplicationDbContext : IdentityDbContext<SystemUser>
 {
     public ApplicationDbContext(DbContextOptions options) : base(options)
     {
     }
 
     public DbSet<RefreshToken> RefreshTokens { get; set; }
-    public DbSet<User> Users { get; set; }
+    public DbSet<SystemUser> Users { get; set; }
     public DbSet<UserProfile> UserProfiles { get; set; }
     public DbSet<Business> Businesses { get; set; }
     public DbSet<UserBusinessRole> UserBusinessRoles { get; set; }
